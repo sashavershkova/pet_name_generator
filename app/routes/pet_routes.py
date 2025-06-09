@@ -1,12 +1,24 @@
 from flask import Blueprint, request, abort, make_response
 from ..db import db
 from ..models.pet import Pet
-
+from ..models.utilities import generate_pet_name
 bp = Blueprint("pets", __name__, url_prefix="/pets")
 
 @bp.post("")
 def create_pet():
-    pass
+    request_body = request.get_json()
+    request_body["name"] = generate_pet_name(request_body)
+    try: 
+        new_pet = Pet.from_dict(request_body)
+        db.session.add(new_pet)
+        db.session.commit()
+
+        return new_pet.to_dict(), 201
+    
+    except KeyError as e:
+        abort(make_response({"message": f"missing required value: {e}"}, 400))
+
+
 
 @bp.get("")
 def get_pets():
